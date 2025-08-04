@@ -45,8 +45,7 @@ This allows you to use your pedaling power as input in games or simulations that
 ### Hardware
 
 - BLE-enabled home trainer supporting the Cycling Power profile  
-- Windows PC with vJoy installed, or Linux/macOS with a compatible virtual gamepad emulator  
-- A configured virtual controller device (e.g., one X360 device in vJoy)
+- Windows PC
 
 ### Software
 
@@ -57,7 +56,6 @@ This allows you to use your pedaling power as input in games or simulations that
 | bleak          | latest           | `pip install bleak`  
 | vgamepad       | latest           | `pip install vgamepad`  
 | keyboard       | latest           | `pip install keyboard`  
-| vJoy (Windows) | 2.x              | [vJoy GitHub](https://github.com/shauleiz/vJoy)
 
 ---
 
