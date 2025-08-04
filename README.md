@@ -80,8 +80,8 @@ pip install -r requirements.txt
 
 Open `potato.py` and adjust the following:
 
-- `FTP_WATTS` (default: 230) to match your personal FTP  
-- The tanh mapping formula to customize sensitivity  
+- `FTP_WATTS` (default: 230, my FTP) to match your personal FTP  
+- The tanh mapping formula to customize sensitivity if needed (or make it linear if you want to) 
 - Key bindings in `setup_keyboard_mapping()` if needed
 
 ---
