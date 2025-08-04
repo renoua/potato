@@ -5,7 +5,7 @@ _Power Output Translator for Analog Trigger Operations_
 
 > ⚠️ **Proof of Concept**  
 > This project is a technical prototype designed to demonstrate BLE power mapping to virtual gamepad input.  
-> It is not production-ready and may require manual setup or adjustments depending on your system.
+> It is not production-ready and may require manual setup or adjustments depending on your system. Consider this a dirty mostly AI-made POC!
 
 
 ---
