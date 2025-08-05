@@ -81,7 +81,7 @@ pip install -r requirements.txt
 You can pass options via command line:
 
 ```bash
-python potato2.py --ftp 230 --device-name KICKR --threshold 20
+python potato.py --ftp 230 --device-name KICKR --threshold 20
 ```
 
 Available flags:
