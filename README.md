@@ -1,8 +1,6 @@
 # POTATO  
 _Power Output Translator for Analog Trigger Operations_
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]() [![License](https://img.shields.io/badge/license-MIT-blue)]()
-
 > ⚠️ **Proof of Concept**  
 > This project is a technical prototype designed to demonstrate BLE power mapping to virtual gamepad input.  
 > It is not production-ready and may require manual setup or adjustments depending on your system. 
