@@ -1,13 +1,12 @@
 # POTATO  
 _Power Output Translator for Analog Trigger Operations_
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]() [![PyPI](https://img.shields.io/pypi/v/potato)]()
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]() [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 > ⚠️ **Proof of Concept**  
 > This project is a technical prototype designed to demonstrate BLE power mapping to virtual gamepad input.  
-> It is not production-ready and may require manual setup or adjustments depending on your system. Consider this a dirty mostly AI-made POC!
-> POC video: https://youtu.be/CySqMHtEQ-Q
-
+> It is not production-ready and may require manual setup or adjustments depending on your system. 
+> Consider this a dirty mostly AI-made POC! POC video: https://youtu.be/CySqMHtEQ-Q
 
 ---
 
@@ -25,19 +24,20 @@ _Power Output Translator for Analog Trigger Operations_
 
 ## Description
 
-**POTATO** reads real-time power output from a BLE home trainer (e.g., Wahoo KICKR) and maps it to an analog trigger value (0–255) on a virtual Xbox 360 controller.  
-This allows you to use your pedaling power as input in games or simulations that accept gamepad controls.
+POTATO reads real-time power output from a BLE home trainer (e.g. Wahoo KICKR), maps it through a tanh curve, and feeds it into the right trigger of a virtual Xbox 360 controller.  
+It optionally binds Left/Right arrow keys to the D-Pad for compatibility with tools like Zwift Play or SwiftControl.
 
 ---
 
 ## Features
 
-- ✅ Automatic BLE scan and connection to devices with "KICKR" in their name  
-- ⚡ Real-time parsing of Cycling Power Measurement (UUID `00002a63-0000-1000-8000-00805f9b34fb`)  
-- 📈 Non-linear tanh mapping calibrated to reach 75% trigger at FTP (default: 230 W)  
-- 🎮 Virtual Xbox 360 controller output via `vgamepad`  
-- ⌨️ Keyboard hook for D-Pad navigation (←/→)  
-- 🖥️ Console logging of power (W) and normalized trigger ratio (0.00–1.00)
+- BLE scan and connection to devices matching a partial name (default: "KICKR")  
+- Real-time parsing of Cycling Power Measurement (UUID `00002a63-0000-1000-8000-00805f9b34fb`)  
+- Tanh-based mapping: 75% trigger at FTP, never reaches full throttle  
+- Configurable FTP and power threshold via CLI  
+- Virtual Xbox 360 controller output via `vgamepad`  
+- Optional keyboard mapping for D-Pad (←/→)  
+- Console logging of power and trigger ratio
 
 ---
 
@@ -46,17 +46,18 @@ This allows you to use your pedaling power as input in games or simulations that
 ### Hardware
 
 - BLE-enabled home trainer supporting the Cycling Power profile  
-- Windows PC
+- Windows PC with ViGEm installed (used by `vgamepad`)  
+- Optional: keyboard input for D-Pad mapping
 
 ### Software
 
-| Component      | Minimum Version | Install Command              |
-|----------------|------------------|------------------------------|
-| Python         | 3.6+             | [python.org](https://www.python.org)  
-| pip            | latest           | Bundled with Python  
-| bleak          | latest           | `pip install bleak`  
-| vgamepad       | latest           | `pip install vgamepad`  
-| keyboard       | latest           | `pip install keyboard`  
+| Component      | Install Command              |
+|----------------|------------------------------|
+| Python ≥ 3.6   | [python.org](https://www.python.org)  
+| bleak          | `pip install bleak`  
+| vgamepad       | `pip install vgamepad`  
+| keyboard       | `pip install keyboard`  
+| ViGEm (Windows)| [vigem.org](https://vigem.org)  
 
 ---
 
@@ -73,17 +74,22 @@ cd POTATO
 pip install -r requirements.txt
 ```
 
-> 💡 On Windows, make sure vJoy is installed and configured with at least one virtual X360 device.
-
 ---
 
 ## Configuration
 
-Open `potato.py` and adjust the following:
+You can pass options via command line:
 
-- `FTP_WATTS` (default: 230, my FTP) to match your personal FTP  
-- The tanh mapping formula to customize sensitivity if needed (or make it linear if you want to) 
-- Key bindings in `setup_keyboard_mapping()` if needed
+```bash
+python potato2.py --ftp 230 --device-name KICKR --threshold 20
+```
+
+Available flags:
+
+- `--ftp` (float): Functional Threshold Power in watts (default: 230)  
+- `--device-name` (str): Partial BLE device name to match (default: "KICKR")  
+- `--threshold` (float): Ignore power below this value (default: 0)  
+- `--disable-dpad`: Disable arrow key mapping to D-Pad
 
 ---
 
@@ -92,15 +98,15 @@ Open `potato.py` and adjust the following:
 Run the script:
 
 ```bash
-python potato.py
+python potato2.py
 ```
 
 Once running:
 
-- The script scans for BLE devices and connects to your KICKR  
+- The script scans for BLE devices and connects to your trainer  
 - Power notifications are received and mapped to trigger values  
 - The virtual controller is updated in real time  
-- Console output example:
+- Example console output:
 
 ```
 Connected to KICKR  
@@ -114,6 +120,6 @@ Press `Ctrl+C` to exit.
 
 ## Customization
 
-- 🔧 Replace the tanh curve with a linear or exponential mapping  
-- 📡 Add support for other BLE characteristics (e.g., cadence, speed)  
-- 🕹️ Swap `vgamepad` for another gamepad-emulation library if needed
+- Replace the tanh curve with a linear or exponential mapping  
+- Add support for other BLE characteristics (e.g. cadence, speed)  
+- Use other keys or input devices to control the virtual gamepad  
