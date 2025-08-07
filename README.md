@@ -96,7 +96,7 @@ Available flags:
 Run the script:
 
 ```bash
-python potato2.py
+python potato.py
 ```
 
 Once running:
