@@ -7,7 +7,7 @@ POTATO POC
 Reads cycling power from a BLE home trainer (e.g. Wahoo KICKR),
 maps it through a tanh curve, and feeds it into the right trigger of
 a virtual Xbox 360 controller. Optionally binds Left/Right arrow keys
-to the D‐pad (for compatibility with Zwift Play).
+to the D-pad (for compatibility with Zwift Play) and/or displays a GUI.
 """
 
 # Standard lib
@@ -15,6 +15,7 @@ import asyncio
 import threading
 import math
 import argparse
+import tkinter as tk
 
 # Third-party
 import keyboard      # pip install keyboard
@@ -24,6 +25,7 @@ from bleak import BleakClient, BleakScanner
 
 # UUID for the BLE Cycling Power Measurement characteristic
 CPM_UUID = "00002a63-0000-1000-8000-00805f9b34fb"
+
 
 def parse_cycling_power(data: bytearray) -> int:
     """
@@ -36,6 +38,7 @@ def parse_cycling_power(data: bytearray) -> int:
     if len(data) < 4:
         return 0
     return int.from_bytes(data[2:4], byteorder='little', signed=True)
+
 
 class KickrController:
     """
@@ -72,7 +75,8 @@ class KickrController:
 
         device = next(
             (d for d in devices if d.name and self.device_name in d.name.upper()),
-            None)
+            None
+        )
 
         if not device:
             print(f"No device named '{self.device_name}' found.")
@@ -137,26 +141,69 @@ class KickrController:
         while True:
             await asyncio.sleep(1)
 
+
 def setup_keyboard_mapping(gamepad: vgamepad.VX360Gamepad):
+    """Bind Zwift Play and extra keyboard keys to gamepad buttons."""
+    key_map = {
+        # Zwift Play main buttons
+        "left": XUSB_BUTTON.XUSB_GAMEPAD_DPAD_LEFT,
+        "right": XUSB_BUTTON.XUSB_GAMEPAD_DPAD_RIGHT,
+        "home": XUSB_BUTTON.XUSB_GAMEPAD_A,                  # Home → A
+        "shift": XUSB_BUTTON.XUSB_GAMEPAD_B,                 # Shift Left → B
+        "enter": XUSB_BUTTON.XUSB_GAMEPAD_X,                 # Enter → X
+        "end": XUSB_BUTTON.XUSB_GAMEPAD_Y,                   # End → Y
+        "=": XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER,        # = → R1
+        "subtract": XUSB_BUTTON.XUSB_GAMEPAD_LEFT_SHOULDER      # Numpad - → L1
+    }
+
+    for key, btn in key_map.items():
+        keyboard.on_press_key(key, lambda e, b=btn: (
+            gamepad.press_button(b),
+            gamepad.update()
+        ))
+        keyboard.on_release_key(key, lambda e, b=btn: (
+            gamepad.release_button(b),
+            gamepad.update()
+        ))
+
+class MinimalGUI:
     """
-    Bind the left/right arrow keys to D-Pad buttons on the virtual controller.
+    Minimalist Tkinter window to display watts inside a horizontal bar.
+    Perfect for OBS overlay.
     """
-    keyboard.on_press_key("left", lambda e: (
-        gamepad.press_button(XUSB_BUTTON.XUSB_GAMEPAD_DPAD_LEFT),
-        gamepad.update()
-    ))
-    keyboard.on_release_key("left", lambda e: (
-        gamepad.release_button(XUSB_BUTTON.XUSB_GAMEPAD_DPAD_LEFT),
-        gamepad.update()
-    ))
-    keyboard.on_press_key("right", lambda e: (
-        gamepad.press_button(XUSB_BUTTON.XUSB_GAMEPAD_DPAD_RIGHT),
-        gamepad.update()
-    ))
-    keyboard.on_release_key("right", lambda e: (
-        gamepad.release_button(XUSB_BUTTON.XUSB_GAMEPAD_DPAD_RIGHT),
-        gamepad.update()
-    ))
+
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Power Bar")
+        self.root.configure(bg="black")
+        self.root.geometry("300x50")
+        self.root.resizable(False, False)
+
+        # Canvas for bar and text
+        self.canvas = tk.Canvas(self.root, height=30, width=280, bg="black", highlightthickness=0)
+        self.canvas.pack(pady=10)
+
+        # Background rectangle
+        self.canvas.create_rectangle(0, 0, 280, 30, outline="white", fill="black", tags="bg")
+
+        # Foreground rectangle (progress)
+        self.canvas.create_rectangle(0, 0, 0, 30, outline="", fill="lime", tags="bar")
+
+        # Watts text in the center
+        self.canvas.create_text(140, 15, text="0 W", fill="white",
+                                font=("Helvetica", 14, "bold"), tags="text")
+
+    def update(self, power, trigger):
+        """
+        Update bar length and watts text.
+        """
+        bar_length = int(trigger * 280)
+        self.canvas.coords("bar", 0, 0, bar_length, 30)
+        self.canvas.itemconfig("text", text=f"{power} W")
+
+    def run(self):
+        self.root.mainloop()
+
 
 def start_loop(loop: asyncio.AbstractEventLoop):
     """
@@ -165,9 +212,10 @@ def start_loop(loop: asyncio.AbstractEventLoop):
     asyncio.set_event_loop(loop)
     loop.run_forever()
 
+
 def main():
     """
-    Entry point: parse CLI, start BLE, map keyboard.
+    Entry point: parse CLI, start BLE, map keyboard, and optionally show GUI.
     """
     parser = argparse.ArgumentParser(description="BLE to Gamepad bridge")
     parser.add_argument("--ftp", type=float, default=230.0,
@@ -178,7 +226,12 @@ def main():
                         help="Ignore power below this wattage")
     parser.add_argument("--disable-dpad", action="store_true",
                         help="Disable arrow key mapping to D-Pad")
+    parser.add_argument("--gui", action="store_true",
+                        help="Show minimal GUI for power and trigger")
     args = parser.parse_args()
+
+    # GUI setup if enabled
+    gui = MinimalGUI() if args.gui else None
 
     # New thread & loop for BLE
     loop = asyncio.new_event_loop()
@@ -188,7 +241,8 @@ def main():
         ftp=args.ftp,
         device_name=args.device_name,
         threshold=args.threshold,
-        update_callback=lambda p, t: print(f"{p} W → Trigger: {t:.2f}")
+        update_callback=(gui.update if gui else
+                         lambda p, t: print(f"{p} W → Trigger: {t:.2f}"))
     )
 
     # Keyboard mapping (optional)
@@ -197,8 +251,12 @@ def main():
 
     asyncio.run_coroutine_threadsafe(controller.run(), loop)
 
-    # Keep script alive
-    keyboard.wait()
+    # Start GUI or wait for keyboard
+    if gui:
+        gui.run()
+    else:
+        keyboard.wait()
+
 
 if __name__ == "__main__":
     main()
