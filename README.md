@@ -1,10 +1,11 @@
 # POTATO  
 _Power Output Translator for Analog Trigger Operations_
 
+
 > ⚠️ **Proof of Concept**  
-> This project is a technical prototype designed to demonstrate BLE power mapping to virtual gamepad input.  
-> It is not production-ready and may require manual setup or adjustments depending on your system. 
-> Consider this a dirty mostly AI-made POC! POC video: https://youtu.be/CySqMHtEQ-Q
+> This project is a technical prototype that reads BLE cycling power and maps it to a virtual gamepad trigger.  
+> It optionally displays a minimalist GUI and binds keyboard keys to gamepad buttons for Zwift Play compatibility.
+ Consider this a dirty mostly AI-made POC! POC video: https://www.youtube.com/watch?v=vn5HigpRhmc&t=30s
 
 ---
 
@@ -23,7 +24,7 @@ _Power Output Translator for Analog Trigger Operations_
 ## Description
 
 POTATO reads real-time power output from a BLE home trainer (e.g. Wahoo KICKR), maps it through a tanh curve, and feeds it into the right trigger of a virtual Xbox 360 controller.  
-It optionally binds Left/Right arrow keys to the D-Pad for compatibility with tools like Zwift Play or SwiftControl.
+It also supports keyboard-to-gamepad mapping and an optional GUI for visual feedback.
 
 ---
 
@@ -34,8 +35,9 @@ It optionally binds Left/Right arrow keys to the D-Pad for compatibility with to
 - Tanh-based mapping: 75% trigger at FTP, never reaches full throttle  
 - Configurable FTP and power threshold via CLI  
 - Virtual Xbox 360 controller output via `vgamepad`  
-- Optional keyboard mapping for D-Pad (←/→)  
-- Console logging of power and trigger ratio
+- Keyboard mapping for Zwift Play buttons and D-Pad  
+- Optional minimalist GUI using Tkinter (ideal for OBS overlays)  
+- Console or GUI display of current power and trigger ratio
 
 ---
 
@@ -45,7 +47,7 @@ It optionally binds Left/Right arrow keys to the D-Pad for compatibility with to
 
 - BLE-enabled home trainer supporting the Cycling Power profile  
 - Windows PC with ViGEm installed (used by `vgamepad`)  
-- Optional: keyboard input for D-Pad mapping
+- Optional: keyboard input for Zwift Play compatibility
 
 ### Software
 
@@ -63,10 +65,10 @@ It optionally binds Left/Right arrow keys to the D-Pad for compatibility with to
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/POTATO.git
+git clone https://github.com/renoua/potato.git
 
 # Move into the project folder
-cd POTATO
+cd potato
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -79,7 +81,7 @@ pip install -r requirements.txt
 You can pass options via command line:
 
 ```bash
-python potato.py --ftp 230 --device-name KICKR --threshold 20
+python potato.py --ftp 230 --device-name KICKR --threshold 20 --gui
 ```
 
 Available flags:
@@ -87,7 +89,8 @@ Available flags:
 - `--ftp` (float): Functional Threshold Power in watts (default: 230)  
 - `--device-name` (str): Partial BLE device name to match (default: "KICKR")  
 - `--threshold` (float): Ignore power below this value (default: 0)  
-- `--disable-dpad`: Disable arrow key mapping to D-Pad
+- `--disable-dpad`: Disable arrow key mapping to D-Pad  
+- `--gui`: Show a minimalist GUI with power bar and watts display
 
 ---
 
@@ -104,6 +107,8 @@ Once running:
 - The script scans for BLE devices and connects to your trainer  
 - Power notifications are received and mapped to trigger values  
 - The virtual controller is updated in real time  
+- Keyboard keys (←, →, Home, Shift, Enter, End, =, Numpad -) are mapped to gamepad buttons  
+- If GUI is enabled, a small window shows power and trigger bar  
 - Example console output:
 
 ```
@@ -120,4 +125,5 @@ Press `Ctrl+C` to exit.
 
 - Replace the tanh curve with a linear or exponential mapping  
 - Add support for other BLE characteristics (e.g. cadence, speed)  
-- Use other keys or input devices to control the virtual gamepad  
+- Modify the GUI layout or embed it into streaming software  
+- Extend keyboard mappings for additional gamepad buttons
